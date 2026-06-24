@@ -3,6 +3,9 @@ name: Release Gate
 on:
   workflow_dispatch:
     inputs:
+      repo:
+        description: "Private repo to release (e.g. ${{ inputs.repo }})"
+        required: true
       version:
         description: "Version override (e.g. 0.2.0). Leave empty to auto-compute from fragments."
         required: false
@@ -24,7 +27,7 @@ jobs:
           BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           gh workflow run release-1-prerelease.yml \
-            --repo daun-gatal/bezisync \
+            --repo ${{ inputs.repo }} \
             --ref main \
             -f version="${{ inputs.version }}"
 
@@ -33,7 +36,7 @@ jobs:
 
           RUN_ID=""
           for i in $(seq 1 18); do
-            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-1-prerelease.yml/runs" \
+            RUN_ID=$(gh api "repos/${{ inputs.repo }}/actions/workflows/release-1-prerelease.yml/runs" \
               --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
             [ -n "$RUN_ID" ] && break
             echo "Waiting for run ID... attempt $i/18"
@@ -46,7 +49,7 @@ jobs:
           fi
 
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Monitoring: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
 
@@ -54,15 +57,15 @@ jobs:
         run: |
           RUN_ID="${{ steps.dispatch.outputs.run_id }}"
           while true; do
-            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            STATUS=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
             echo "$(date -u +'%H:%M:%S') | $STATUS"
             [ "$STATUS" = "completed" ] && break
             sleep 20
           done
-          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          CONCLUSION=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.conclusion')
           if [ "$CONCLUSION" != "success" ]; then
             echo "::error::Pre-release build failed: $CONCLUSION"
-            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            echo "See: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID"
             exit 1
           fi
         env:
@@ -73,7 +76,7 @@ jobs:
         run: |
           mkdir -p /tmp/release-artifacts
           gh run download "${{ steps.dispatch.outputs.run_id }}" \
-            --repo daun-gatal/bezisync \
+            --repo ${{ inputs.repo }} \
             --name release-version \
             --dir /tmp/release-artifacts
           VERSION=$(cat /tmp/release-artifacts/release-version.txt)
@@ -112,7 +115,7 @@ jobs:
           BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           gh workflow run release-2-assemble.yml \
-            --repo daun-gatal/bezisync \
+            --repo ${{ inputs.repo }} \
             --ref main \
             -f version="${{ needs.run-prerelease.outputs.version }}"
 
@@ -121,7 +124,7 @@ jobs:
 
           RUN_ID=""
           for i in $(seq 1 18); do
-            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-2-assemble.yml/runs" \
+            RUN_ID=$(gh api "repos/${{ inputs.repo }}/actions/workflows/release-2-assemble.yml/runs" \
               --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
             [ -n "$RUN_ID" ] && break
             echo "Waiting for run ID... attempt $i/18"
@@ -134,7 +137,7 @@ jobs:
           fi
 
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Monitoring: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
 
@@ -142,15 +145,15 @@ jobs:
         run: |
           RUN_ID="${{ steps.dispatch.outputs.run_id }}"
           while true; do
-            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            STATUS=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
             echo "$(date -u +'%H:%M:%S') | $STATUS"
             [ "$STATUS" = "completed" ] && break
             sleep 20
           done
-          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          CONCLUSION=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.conclusion')
           if [ "$CONCLUSION" != "success" ]; then
             echo "::error::Changelog assembly failed: $CONCLUSION"
-            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            echo "See: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID"
             exit 1
           fi
         env:
@@ -162,7 +165,7 @@ jobs:
           VERSION="${{ needs.run-prerelease.outputs.version }}"
           RELEASE_BRANCH="release/v$VERSION"
 
-          if gh api "repos/daun-gatal/bezisync/git/refs/heads/$RELEASE_BRANCH" \
+          if gh api "repos/${{ inputs.repo }}/git/refs/heads/$RELEASE_BRANCH" \
             --jq '.ref' 2>/dev/null | grep -q "$RELEASE_BRANCH"; then
             echo "has_code_changes=true" >> "$GITHUB_OUTPUT"
             echo "Release branch $RELEASE_BRANCH found — code changes detected."
@@ -203,7 +206,7 @@ jobs:
           BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           gh workflow run release-3-push.yml \
-            --repo daun-gatal/bezisync \
+            --repo ${{ inputs.repo }} \
             --ref main \
             -f version="${{ needs.run-prerelease.outputs.version }}" \
             -f release_branch="${{ needs.run-assemble.outputs.release_branch }}"
@@ -213,7 +216,7 @@ jobs:
 
           RUN_ID=""
           for i in $(seq 1 18); do
-            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-3-push.yml/runs" \
+            RUN_ID=$(gh api "repos/${{ inputs.repo }}/actions/workflows/release-3-push.yml/runs" \
               --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
             [ -n "$RUN_ID" ] && break
             echo "Waiting for run ID... attempt $i/18"
@@ -226,7 +229,7 @@ jobs:
           fi
 
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Monitoring: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
 
@@ -234,15 +237,15 @@ jobs:
         run: |
           RUN_ID="${{ steps.dispatch.outputs.run_id }}"
           while true; do
-            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            STATUS=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
             echo "$(date -u +'%H:%M:%S') | $STATUS"
             [ "$STATUS" = "completed" ] && break
             sleep 20
           done
-          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          CONCLUSION=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.conclusion')
           if [ "$CONCLUSION" != "success" ]; then
             echo "::error::Push to main failed: $CONCLUSION"
-            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            echo "See: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID"
             exit 1
           fi
           {
@@ -276,7 +279,7 @@ jobs:
           BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           gh workflow run release-4-docker-publish.yml \
-            --repo daun-gatal/bezisync \
+            --repo ${{ inputs.repo }} \
             --ref main \
             -f version="${{ needs.run-prerelease.outputs.version }}"
 
@@ -285,7 +288,7 @@ jobs:
 
           RUN_ID=""
           for i in $(seq 1 18); do
-            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-4-docker-publish.yml/runs" \
+            RUN_ID=$(gh api "repos/${{ inputs.repo }}/actions/workflows/release-4-docker-publish.yml/runs" \
               --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
             [ -n "$RUN_ID" ] && break
             echo "Waiting for run ID... attempt $i/18"
@@ -298,7 +301,7 @@ jobs:
           fi
 
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "Monitoring: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
 
@@ -306,15 +309,15 @@ jobs:
         run: |
           RUN_ID="${{ steps.dispatch.outputs.run_id }}"
           while true; do
-            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            STATUS=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
             echo "$(date -u +'%H:%M:%S') | $STATUS"
             [ "$STATUS" = "completed" ] && break
             sleep 20
           done
-          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          CONCLUSION=$(gh api "repos/${{ inputs.repo }}/actions/runs/$RUN_ID" --jq '.conclusion')
           if [ "$CONCLUSION" != "success" ]; then
             echo "::error::Docker publish failed: $CONCLUSION"
-            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            echo "See: https://github.com/${{ inputs.repo }}/actions/runs/$RUN_ID"
             exit 1
           fi
           {
