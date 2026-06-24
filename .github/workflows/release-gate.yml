@@ -9,42 +9,320 @@ on:
         default: ""
 
 jobs:
-  gate-prerelease:
-    name: "Gate 1: Prerelease Approval"
+  # ── Phase 1: build pre-release images (auto, no gate) ──────────────────────
+  run-prerelease:
+    name: "Phase 1 — Build Pre-release Images"
     runs-on: ubuntu-latest
-    environment: prerelease-approval
-    steps:
-      - name: Approved
-        run: echo "Prerelease gate approved."
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      run_id: ${{ steps.dispatch.outputs.run_id }}
 
-  gate-release:
-    name: "Gate 2: Release Approval"
-    needs: gate-prerelease
-    runs-on: ubuntu-latest
-    environment: release-approval
     steps:
-      - name: Approved
-        run: echo "Release gate approved."
-
-  gate-docker:
-    name: "Gate 3: Docker Publish Approval"
-    needs: gate-release
-    runs-on: ubuntu-latest
-    environment: docker-publish
-    steps:
-      - name: Approved
-        run: echo "Docker publish gate approved."
-
-  trigger:
-    name: Trigger BeziSync Release
-    needs: [gate-prerelease, gate-release, gate-docker]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dispatch release workflow
+      - name: Dispatch prerelease workflow
+        id: dispatch
         run: |
-          gh workflow run auto-release.yml \
+          BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          gh workflow run release-1-prerelease.yml \
             --repo daun-gatal/bezisync \
             --ref main \
             -f version="${{ inputs.version }}"
+
+          echo "Dispatched. Waiting for run to appear..."
+          sleep 10
+
+          RUN_ID=""
+          for i in $(seq 1 18); do
+            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-1-prerelease.yml/runs" \
+              --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for run ID... attempt $i/18"
+            sleep 5
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate the dispatched workflow run."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+      - name: Wait for pre-release build to complete
+        run: |
+          RUN_ID="${{ steps.dispatch.outputs.run_id }}"
+          while true; do
+            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            echo "$(date -u +'%H:%M:%S') | $STATUS"
+            [ "$STATUS" = "completed" ] && break
+            sleep 20
+          done
+          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Pre-release build failed: $CONCLUSION"
+            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+      - name: Get computed version
+        id: get-version
+        run: |
+          mkdir -p /tmp/release-artifacts
+          gh run download "${{ steps.dispatch.outputs.run_id }}" \
+            --repo daun-gatal/bezisync \
+            --name release-version \
+            --dir /tmp/release-artifacts
+          VERSION=$(cat /tmp/release-artifacts/release-version.txt)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Phase 1 complete — pre-release images ready"
+            echo "**Version:** v$VERSION"
+            echo ""
+            echo "Test the pre-release images, then approve **Gate 1: Prerelease Approval** below."
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+  # ── Gate 1 ─────────────────────────────────────────────────────────────────
+  gate-prerelease:
+    name: "Gate 1 — Prerelease Approval"
+    needs: run-prerelease
+    runs-on: ubuntu-latest
+    environment: prerelease-approval
+    steps:
+      - run: echo "Gate 1 approved — proceeding to assemble changelog."
+
+  # ── Phase 2: assemble changelog + push release branch ──────────────────────
+  run-assemble:
+    name: "Phase 2 — Assemble Changelog"
+    needs: [gate-prerelease, run-prerelease]
+    runs-on: ubuntu-latest
+    outputs:
+      has_code_changes: ${{ steps.check-branch.outputs.has_code_changes }}
+      release_branch: ${{ steps.check-branch.outputs.release_branch }}
+
+    steps:
+      - name: Dispatch assemble workflow
+        id: dispatch
+        run: |
+          BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          gh workflow run release-2-assemble.yml \
+            --repo daun-gatal/bezisync \
+            --ref main \
+            -f version="${{ needs.run-prerelease.outputs.version }}"
+
+          echo "Dispatched. Waiting for run to appear..."
+          sleep 10
+
+          RUN_ID=""
+          for i in $(seq 1 18); do
+            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-2-assemble.yml/runs" \
+              --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for run ID... attempt $i/18"
+            sleep 5
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate the dispatched workflow run."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+      - name: Wait for assemble to complete
+        run: |
+          RUN_ID="${{ steps.dispatch.outputs.run_id }}"
+          while true; do
+            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            echo "$(date -u +'%H:%M:%S') | $STATUS"
+            [ "$STATUS" = "completed" ] && break
+            sleep 20
+          done
+          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Changelog assembly failed: $CONCLUSION"
+            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+      - name: Check for release branch (detect code changes)
+        id: check-branch
+        run: |
+          VERSION="${{ needs.run-prerelease.outputs.version }}"
+          RELEASE_BRANCH="release/v$VERSION"
+
+          if gh api "repos/daun-gatal/bezisync/git/refs/heads/$RELEASE_BRANCH" \
+            --jq '.ref' 2>/dev/null | grep -q "$RELEASE_BRANCH"; then
+            echo "has_code_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Release branch $RELEASE_BRANCH found — code changes detected."
+          else
+            echo "has_code_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Release branch not found — no code changes. Remaining phases skipped."
+          fi
+          echo "release_branch=$RELEASE_BRANCH" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Phase 2 complete — changelog assembled"
+            echo "**Version:** v$VERSION | **Branch:** \`$RELEASE_BRANCH\`"
+            echo ""
+            echo "Review the changelog, then approve **Gate 2: Release Approval** below."
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+  # ── Gate 2 ─────────────────────────────────────────────────────────────────
+  gate-release:
+    name: "Gate 2 — Release Approval"
+    needs: run-assemble
+    if: needs.run-assemble.outputs.has_code_changes == 'true'
+    runs-on: ubuntu-latest
+    environment: release-approval
+    steps:
+      - run: echo "Gate 2 approved — proceeding to push to main."
+
+  # ── Phase 3: fast-forward main ─────────────────────────────────────────────
+  run-push:
+    name: "Phase 3 — Push to Main"
+    needs: [gate-release, run-assemble, run-prerelease]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch push workflow
+        id: dispatch
+        run: |
+          BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          gh workflow run release-3-push.yml \
+            --repo daun-gatal/bezisync \
+            --ref main \
+            -f version="${{ needs.run-prerelease.outputs.version }}" \
+            -f release_branch="${{ needs.run-assemble.outputs.release_branch }}"
+
+          echo "Dispatched. Waiting for run to appear..."
+          sleep 10
+
+          RUN_ID=""
+          for i in $(seq 1 18); do
+            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-3-push.yml/runs" \
+              --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for run ID... attempt $i/18"
+            sleep 5
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate the dispatched workflow run."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+      - name: Wait for push to complete
+        run: |
+          RUN_ID="${{ steps.dispatch.outputs.run_id }}"
+          while true; do
+            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            echo "$(date -u +'%H:%M:%S') | $STATUS"
+            [ "$STATUS" = "completed" ] && break
+            sleep 20
+          done
+          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Push to main failed: $CONCLUSION"
+            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            exit 1
+          fi
+          {
+            echo "## Phase 3 complete — main updated"
+            echo "**v${{ needs.run-prerelease.outputs.version }}** is now on \`main\`."
+            echo ""
+            echo "Approve **Gate 3: Docker Publish** below to build and publish final images."
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+  # ── Gate 3 ─────────────────────────────────────────────────────────────────
+  gate-docker:
+    name: "Gate 3 — Docker Publish"
+    needs: run-push
+    runs-on: ubuntu-latest
+    environment: docker-publish
+    steps:
+      - run: echo "Gate 3 approved — building and publishing final Docker images."
+
+  # ── Phase 4: build final images + publish release ──────────────────────────
+  run-docker-publish:
+    name: "Phase 4 — Docker & Publish"
+    needs: [gate-docker, run-prerelease]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch docker-publish workflow
+        id: dispatch
+        run: |
+          BEFORE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          gh workflow run release-4-docker-publish.yml \
+            --repo daun-gatal/bezisync \
+            --ref main \
+            -f version="${{ needs.run-prerelease.outputs.version }}"
+
+          echo "Dispatched. Waiting for run to appear..."
+          sleep 10
+
+          RUN_ID=""
+          for i in $(seq 1 18); do
+            RUN_ID=$(gh api "repos/daun-gatal/bezisync/actions/workflows/release-4-docker-publish.yml/runs" \
+              --jq ".workflow_runs[] | select(.created_at >= \"$BEFORE\") | .id" 2>/dev/null | head -1)
+            [ -n "$RUN_ID" ] && break
+            echo "Waiting for run ID... attempt $i/18"
+            sleep 5
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "ERROR: Could not locate the dispatched workflow run."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Monitoring: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
+
+      - name: Wait for docker build and publish to complete
+        run: |
+          RUN_ID="${{ steps.dispatch.outputs.run_id }}"
+          while true; do
+            STATUS=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.status' 2>/dev/null)
+            echo "$(date -u +'%H:%M:%S') | $STATUS"
+            [ "$STATUS" = "completed" ] && break
+            sleep 20
+          done
+          CONCLUSION=$(gh api "repos/daun-gatal/bezisync/actions/runs/$RUN_ID" --jq '.conclusion')
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Docker publish failed: $CONCLUSION"
+            echo "See: https://github.com/daun-gatal/bezisync/actions/runs/$RUN_ID"
+            exit 1
+          fi
+          {
+            echo "## Release complete — v${{ needs.run-prerelease.outputs.version }}"
+            echo ""
+            echo "- Docker images published to GHCR"
+            echo "- Git tag created"
+            echo "- GitHub Release published"
+          } >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
