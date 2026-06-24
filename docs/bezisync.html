@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BeziSync — Safe, simple Debezium CDC</title>
+  <meta name="description" content="BeziSync makes Debezium Change Data Capture safe and simple: preflight validation, an automatic connector compiler, and live pipeline health.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="wrap">
+      <a href="index.html" class="brand">Release<span>Hub</span></a>
+      <div class="links">
+        <a href="#what">What</a>
+        <a href="#why">Why</a>
+        <a href="#concepts">Concepts</a>
+        <a href="#run">Run</a>
+        <a href="#how">How</a>
+        <a href="https://debezium.io/">Debezium ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="eyebrow">Change Data Capture</span>
+      <h1>BeziSync makes <span class="grad">Debezium CDC</span> safe and simple.</h1>
+      <p class="lead">Running Debezium by hand means hand-writing dozens of connector properties — then discovering they're wrong only when a connector crash-loops in production. BeziSync verifies every prerequisite <em>before</em> you deploy, compiles the right config for you, and shows each pipeline's health live.</p>
+      <div class="btn-row">
+        <a class="btn primary" href="#how">How to use it →</a>
+        <a class="btn" href="#concepts">Key concepts</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- WHAT -->
+  <section id="what">
+    <div class="wrap">
+      <h2>What it is</h2>
+      <p class="sub">A control plane for Change Data Capture you drive from a web UI. It orchestrates <strong>Debezium Server</strong> — one container per pipeline — so you get streaming database changes <strong>without running a Kafka Connect cluster</strong>.</p>
+      <div class="cards">
+        <div class="card">
+          <span class="ico">✅</span>
+          <h3>Preflight validation</h3>
+          <p>Connects to your source and target and checks every CDC prerequisite before anything deploys.</p>
+        </div>
+        <div class="card">
+          <span class="ico">⚙️</span>
+          <h3>Connector compiler</h3>
+          <p>Turns your choices into a correct Debezium config — connector class, topic prefix, slots, server IDs, storage — and previews it before deploy.</p>
+        </div>
+        <div class="card">
+          <span class="ico">📊</span>
+          <h3>Live health</h3>
+          <p>Lifecycle phase, snapshot progress, throughput hints, parsed error reasons, and a live log viewer.</p>
+        </div>
+        <div class="card">
+          <span class="ico">🔐</span>
+          <h3>Secure by default</h3>
+          <p>Credentials are encrypted at rest and never returned by the API. Access is gated behind sign-in.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section id="why">
+    <div class="wrap">
+      <h2>Why it exists</h2>
+      <p class="sub">Debezium is powerful but unforgiving. BeziSync turns each common failure mode into something caught early and explained clearly.</p>
+      <table>
+        <thead><tr><th>Debezium pain point</th><th>What BeziSync does</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Cryptic failures after deploy</td>
+            <td><strong>Preflight validation</strong> — connects to source/target and checks <code>wal_level</code>, replication slots &amp; privileges (Postgres), <code>log_bin</code>/<code>binlog_format</code>/grants (MySQL), and broker reachability. Blocks bad deploys with actionable remediation.</td>
+          </tr>
+          <tr>
+            <td>Hand-written connector properties</td>
+            <td><strong>Connector-aware compiler</strong> injects the right connector class, topic prefix, Postgres plugin/slot/publication, MySQL <code>server.id</code>, and offset &amp; schema-history storage — and shows you the result before deploy.</td>
+          </tr>
+          <tr>
+            <td>"Is it even working?"</td>
+            <td><strong>Live health</strong> — lifecycle phase, snapshot completion, throughput hints, parsed error reason, and a live log viewer.</td>
+          </tr>
+          <tr>
+            <td>Plaintext secrets everywhere</td>
+            <td>Credentials are <strong>encrypted at rest</strong> and never returned by the API.</td>
+          </tr>
+          <tr>
+            <td>Slow, error-prone first run</td>
+            <td>A <strong>guided wizard</strong> (configure → select tables → validate → deploy) so the pipeline is only created once everything lines up.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CONCEPTS -->
+  <section id="concepts">
+    <div class="wrap">
+      <h2>Key concepts</h2>
+      <p class="sub">Four building blocks. You set them up once, then compose them into as many pipelines as you need.</p>
+      <div class="cards">
+        <div class="card">
+          <span class="ico">🔑</span>
+          <h3>Credentials</h3>
+          <p>Stored secrets for your databases and brokers — username/password, SASL, AWS IAM, or none. Encrypted at rest and reused across connections.</p>
+        </div>
+        <div class="card">
+          <span class="ico">🔌</span>
+          <h3>Connections</h3>
+          <p>A <strong>source</strong> (PostgreSQL or MySQL) or a <strong>target</strong> (Kafka). Each can be tested on the spot; sources are verified for CDC readiness.</p>
+        </div>
+        <div class="card">
+          <span class="ico">🔄</span>
+          <h3>Pipeline</h3>
+          <p>One Debezium stream binding a source to a target, with the tables you picked and a snapshot mode. Runs as its own Debezium Server container.</p>
+        </div>
+        <div class="card">
+          <span class="ico">🗂️</span>
+          <h3>Workspace</h3>
+          <p>Groups credentials, connections, and pipelines so teams and environments stay separated.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RUN -->
+  <section id="run">
+    <div class="wrap">
+      <h2>Run it yourself</h2>
+      <p class="sub">BeziSync self-hosts as a small stack of published images from GHCR. You bring your own source database and Kafka — this stack is just the BeziSync app itself.</p>
+      <p>Save this as <code>docker-compose.yml</code>:</p>
+      <pre><code><span class="cm"># docker-compose.yml — BeziSync self-host (bring your own source DB + Kafka)</span>
+services:
+  db:                  <span class="cm"># BeziSync's own metadata store</span>
+    image: postgres:16
+    environment:
+      POSTGRES_USER: bezisync
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bezisync
+    volumes: [metadata:/var/lib/postgresql/data]
+
+  redis:               <span class="cm"># Celery broker for the worker</span>
+    image: redis:7
+
+  init:                <span class="cm"># creates schema + seeds the admin user, then exits</span>
+    image: ghcr.io/daun-gatal/bezisync-backend:latest
+    command: python -m bezisync.scripts.init_db
+    environment: &amp;env
+      DATABASE_URL: postgresql+psycopg2://bezisync:password@db:5432/bezisync
+      REDIS_URL: redis://redis:6379/0
+      BEZISYNC_ENCRYPTION_KEY: ${BEZISYNC_ENCRYPTION_KEY:?generate a Fernet key}
+      BEZISYNC_JWT_SECRET: ${BEZISYNC_JWT_SECRET:?set a random secret}
+      BEZISYNC_ADMIN_PASSWORD: ${BEZISYNC_ADMIN_PASSWORD:?set an admin password}
+    depends_on: [db]
+
+  api:
+    image: ghcr.io/daun-gatal/bezisync-backend:latest
+    command: uvicorn bezisync.main:app --host 0.0.0.0 --port 8000
+    environment:
+      &lt;&lt;: *env
+      BEZISYNC_CORS_ORIGINS: '["http://localhost:8080"]'
+    ports: ["8000:8000"]
+    depends_on: [init, redis]
+
+  worker:              <span class="cm"># spawns/stops the per-pipeline Debezium containers</span>
+    image: ghcr.io/daun-gatal/bezisync-backend:latest
+    command: celery -A bezisync.worker.celery_app worker --beat --loglevel=info
+    environment: *env
+    depends_on: [init, redis]
+
+  frontend:            <span class="cm"># the web UI</span>
+    image: ghcr.io/daun-gatal/bezisync-frontend:latest
+    ports: ["8080:80"]
+    depends_on: [api]
+
+volumes:
+  metadata:</code></pre>
+
+      <p>Provide the three required secrets, then start the stack:</p>
+      <pre><code><span class="cm"># a one-liner to generate a Fernet encryption key:</span>
+export BEZISYNC_ENCRYPTION_KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+export BEZISYNC_JWT_SECRET=$(openssl rand -hex 32)
+export BEZISYNC_ADMIN_PASSWORD=&lt;your-admin-password&gt;
+
+docker compose pull
+docker compose up -d</code></pre>
+
+      <table>
+        <thead><tr><th>Service</th><th>URL</th></tr></thead>
+        <tbody>
+          <tr><td>Web UI</td><td><code>http://localhost:8080</code></td></tr>
+          <tr><td>API</td><td><code>http://localhost:8000</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>One-time setup after first start:</strong> the worker deploys Debezium connectors to a Docker daemon you choose — it isn't wired up by default. Log in, then open <strong>Settings → Runtime Config</strong> and point BeziSync at the daemon that should host your connectors (and its image, network, and TLS). Until that's set, pipelines can be created and validated but not deployed.
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how">
+    <div class="wrap">
+      <h2>How you use it</h2>
+      <p class="sub">Everything happens in the BeziSync UI. From a clean workspace, a working CDC stream is four moves away.</p>
+      <ol class="steps">
+        <li><strong>Add credentials</strong><span>Store the secrets for your source database and target broker. They're encrypted immediately and never shown again.</span></li>
+        <li><strong>Create connections</strong><span>Add a source (Postgres/MySQL) and a target (Kafka), then hit <em>Test</em>. BeziSync confirms connectivity and that the source is CDC-ready.</span></li>
+        <li><strong>Launch a pipeline (the wizard)</strong>
+          <span>
+            <strong style="font-weight:600">Configure</strong> — name the stream, bind source → target, pick a snapshot mode.<br>
+            <strong style="font-weight:600">Select tables</strong> — discover tables from the source and choose which become topics (or add <code>schema.table</code> by hand).<br>
+            <strong style="font-weight:600">Validate &amp; deploy</strong> — preflight runs every check, previews the topics and the compiled Debezium config, then deploys. Failing checks block the deploy; warnings can be overridden with <em>Deploy anyway</em>.
+          </span>
+        </li>
+        <li><strong>Monitor &amp; operate</strong><span>The pipeline page shows lifecycle phase, snapshot progress, throughput, parsed errors, and live logs. Trigger ad-hoc <strong>incremental snapshots</strong> (execute / pause / resume / stop) on a running pipeline — no redeploy needed.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- SNAPSHOT MODES -->
+  <section id="snapshots">
+    <div class="wrap">
+      <h2>Snapshot modes</h2>
+      <p class="sub">Chosen per pipeline in the wizard's Configure step — it decides what happens with existing rows before streaming begins.</p>
+      <table>
+        <thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td>Initial <em>(recommended)</em></td><td>Snapshot existing rows once, then stream ongoing changes.</td></tr>
+          <tr><td>Schema only</td><td>Skip existing rows; stream changes from now on.</td></tr>
+          <tr><td>Never</td><td>Streaming only — no snapshot.</td></tr>
+          <tr><td>Always</td><td>Re-snapshot on every start.</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        Already running and need to backfill a table? Use an <strong>incremental snapshot</strong> from the pipeline page instead of redeploying — it runs alongside live streaming and can be paused, resumed, or stopped.
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="wrap">
+      <h2>Under the hood</h2>
+      <p class="sub">Two services plus a worker — the parts you interact with and the part that runs your streams.</p>
+      <div class="cards">
+        <div class="card">
+          <h3>Web UI</h3>
+          <p>Where you log in, manage credentials and connections, run the pipeline wizard, and watch live monitoring.</p>
+        </div>
+        <div class="card">
+          <h3>API + worker</h3>
+          <p>The API handles connectivity checks, preflight validation, config compilation, and health parsing. A background worker spawns and stops the per-pipeline Debezium Server containers.</p>
+        </div>
+      </div>
+      <a class="back" href="index.html">← Back to all products</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© <span id="yr"></span> Release Hub</span>
+      <a href="index.html">All products</a>
+      <a href="https://debezium.io/">Debezium</a>
+      <span>Licensed under Apache 2.0</span>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>

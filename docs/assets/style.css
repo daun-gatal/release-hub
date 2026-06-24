@@ -1,0 +1,166 @@
+/* Release Hub docs — shared styles */
+:root {
+  --bg: #0b0e14;
+  --bg-soft: #11151f;
+  --panel: #151b27;
+  --panel-2: #1b2333;
+  --border: #232c3d;
+  --text: #e6ebf2;
+  --muted: #9aa6b8;
+  --faint: #6b7688;
+  --accent: #5b9dff;
+  --accent-2: #7c5cff;
+  --good: #3ecf8e;
+  --warn: #f5a623;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8fb;
+    --bg-soft: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #f1f4f9;
+    --border: #e2e7f0;
+    --text: #1a2230;
+    --muted: #586073;
+    --faint: #8b94a6;
+    --accent: #2f6fdd;
+    --accent-2: #6a3cff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Top nav ── */
+.nav {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.nav .wrap { display: flex; align-items: center; gap: 20px; height: 60px; }
+.brand { font-weight: 700; letter-spacing: -0.01em; color: var(--text); font-size: 1.05rem; }
+.brand span { color: var(--accent); }
+.nav .links { margin-left: auto; display: flex; gap: 22px; font-size: 0.92rem; }
+.nav .links a { color: var(--muted); }
+.nav .links a:hover { color: var(--text); text-decoration: none; }
+
+/* ── Hero ── */
+.hero { padding: 80px 0 48px; }
+.hero .eyebrow {
+  display: inline-block; font-family: var(--mono); font-size: 0.78rem;
+  color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--panel); margin-bottom: 22px;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.08; margin: 0 0 18px;
+  letter-spacing: -0.025em; font-weight: 800;
+}
+.hero h1 .grad {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero p.lead { font-size: 1.22rem; color: var(--muted); max-width: 640px; margin: 0 0 30px; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 20px; border-radius: 10px; font-weight: 600; font-size: 0.95rem;
+  border: 1px solid var(--border); color: var(--text); background: var(--panel);
+  transition: transform .12s ease, border-color .12s ease;
+}
+.btn:hover { text-decoration: none; transform: translateY(-1px); border-color: var(--accent); }
+.btn.primary { background: linear-gradient(100deg, var(--accent), var(--accent-2)); border: none; color: #fff; }
+
+/* ── Sections ── */
+section { padding: 44px 0; border-top: 1px solid var(--border); }
+section h2 {
+  font-size: 1.7rem; letter-spacing: -0.02em; margin: 0 0 8px; font-weight: 750;
+}
+section .sub { color: var(--muted); margin: 0 0 28px; max-width: 680px; }
+h3 { font-size: 1.15rem; margin: 28px 0 10px; letter-spacing: -0.01em; }
+
+/* ── Cards ── */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  padding: 22px; transition: border-color .12s ease, transform .12s ease;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card h3 { margin: 0 0 8px; font-size: 1.08rem; }
+.card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+.card .ico { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+a.card { color: inherit; }
+a.card:hover { text-decoration: none; }
+.card .tag {
+  display: inline-block; font-family: var(--mono); font-size: 0.7rem; color: var(--good);
+  border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; margin-top: 12px;
+}
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.93rem; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--faint); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+td:first-child { color: var(--text); font-weight: 500; }
+
+/* ── Code ── */
+code {
+  font-family: var(--mono); font-size: 0.88em; background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px;
+}
+pre {
+  background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px 20px; overflow-x: auto; margin: 16px 0;
+}
+pre code { background: none; border: none; padding: 0; font-size: 0.86rem; line-height: 1.6; color: var(--text); }
+.cm { color: var(--faint); }
+
+/* ── Steps ── */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 8px 0; }
+.steps li {
+  position: relative; padding: 4px 0 22px 52px; border-left: 2px solid var(--border);
+  margin-left: 16px;
+}
+.steps li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.steps li::before {
+  counter-increment: step; content: counter(step);
+  position: absolute; left: -17px; top: 0; width: 32px; height: 32px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--panel); border: 1px solid var(--accent); color: var(--accent);
+  font-family: var(--mono); font-weight: 600; font-size: 0.85rem;
+}
+.steps li strong { display: block; margin-bottom: 2px; }
+.steps li span { color: var(--muted); font-size: 0.95rem; }
+
+/* ── Callout ── */
+.note {
+  background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--warn);
+  border-radius: 8px; padding: 14px 18px; margin: 18px 0; color: var(--muted); font-size: 0.93rem;
+}
+.note strong { color: var(--text); }
+
+/* ── Footer ── */
+footer { border-top: 1px solid var(--border); padding: 32px 0; color: var(--faint); font-size: 0.88rem; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+footer a { color: var(--muted); }
+
+.back { font-size: 0.9rem; color: var(--muted); display: inline-block; margin: 28px 0 0; }

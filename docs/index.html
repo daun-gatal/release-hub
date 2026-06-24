@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Release Hub — Product Docs</title>
+  <meta name="description" content="Documentation hub for products released through Release Hub.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="wrap">
+      <a href="index.html" class="brand">Release<span>Hub</span></a>
+      <div class="links">
+        <a href="bezisync.html">BeziSync</a>
+        <a href="https://github.com/daun-gatal/release-hub">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="eyebrow">Product Documentation</span>
+      <h1>One place to learn<br><span class="grad">what we ship.</span></h1>
+      <p class="lead">Release Hub is where our products are released and documented. Pick a product below to understand what it is, why it exists, and how to use it — no source access required.</p>
+      <div class="btn-row">
+        <a class="btn primary" href="bezisync.html">Explore BeziSync →</a>
+        <a class="btn" href="https://github.com/daun-gatal/release-hub">View on GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <h2>Products</h2>
+      <p class="sub">More will appear here over time. For now, start with BeziSync.</p>
+      <div class="cards">
+        <a class="card" href="bezisync.html">
+          <span class="ico">🔄</span>
+          <h3>BeziSync</h3>
+          <p>Makes Debezium Change Data Capture safe and simple — validate prerequisites, compile correct connector configs, and watch pipeline health live.</p>
+          <span class="tag">● Available</span>
+        </a>
+        <div class="card" style="opacity:.55">
+          <span class="ico">✦</span>
+          <h3>More coming</h3>
+          <p>This hub is built to host multiple products. New product pages will be added here as they ship.</p>
+          <span class="tag" style="color:var(--faint)">Planned</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© <span id="yr"></span> Release Hub</span>
+      <a href="https://github.com/daun-gatal/release-hub">GitHub</a>
+      <a href="bezisync.html">BeziSync docs</a>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
