@@ -1,10 +1,10 @@
-name: "Release Gate"
+name: Release Gate
 
 on:
   workflow_dispatch:
     inputs:
       repo:
-        description: "Private repo to release (e.g. ${{ inputs.repo }})"
+        description: "Private repo to release (e.g. daun-gatal/bezisync)"
         required: true
       version:
         description: "Version override (e.g. 0.2.0). Leave empty to auto-compute from fragments."
