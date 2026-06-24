@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BeziSync — Safe, simple Debezium CDC</title>
-  <meta name="description" content="BeziSync makes Debezium Change Data Capture safe and simple: preflight validation, an automatic connector compiler, and live pipeline health.">
+  <title>BeziSync — CDC pipelines without Debezium config pain</title>
+  <meta name="description" content="BeziSync is a self-hosted UI for Debezium CDC: validate source readiness, compile connector configs, deploy pipelines, preview Kafka data, and operate streams safely.">
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -12,11 +12,12 @@
     <div class="wrap">
       <a href="index.html" class="brand">Release<span>Hub</span></a>
       <div class="links">
-        <a href="#what">What</a>
+        <a href="#flow">Flow</a>
+        <a href="#features">Features</a>
         <a href="#why">Why</a>
-        <a href="#concepts">Concepts</a>
         <a href="#run">Run</a>
         <a href="#how">How</a>
+        <a href="#faq">FAQ</a>
         <a href="https://debezium.io/">Debezium ↗</a>
       </div>
     </div>
@@ -24,12 +25,18 @@
 
   <header class="hero">
     <div class="wrap">
-      <span class="eyebrow">Change Data Capture</span>
-      <h1>BeziSync makes <span class="grad">Debezium CDC</span> safe and simple.</h1>
-      <p class="lead">Running Debezium by hand means hand-writing dozens of connector properties — then discovering they're wrong only when a connector crash-loops in production. BeziSync verifies every prerequisite <em>before</em> you deploy, compiles the right config for you, and shows each pipeline's health live.</p>
+      <span class="eyebrow">Self-hosted Change Data Capture</span>
+      <h1>CDC pipelines without <span class="grad">Debezium config pain.</span></h1>
+      <p class="lead">BeziSync gives operators a focused control plane for Postgres/MySQL to Kafka CDC. Validate source readiness, launch Debezium Server containers, preview emitted Kafka records, run incremental snapshots, and watch health from one UI.</p>
       <div class="btn-row">
-        <a class="btn primary" href="#how">How to use it →</a>
-        <a class="btn" href="#concepts">Key concepts</a>
+        <a class="btn primary" href="#run">Try with Docker Compose →</a>
+        <a class="btn" href="#flow">See how it works</a>
+      </div>
+      <div class="hero-proof">
+        <span>Public GHCR images</span>
+        <span>No Kafka Connect cluster</span>
+        <span>Production-shaped Docker runtime</span>
+        <span>Kafka data preview</span>
       </div>
     </div>
   </header>
@@ -38,7 +45,7 @@
   <section id="what">
     <div class="wrap">
       <h2>What it is</h2>
-      <p class="sub">A control plane for Change Data Capture you drive from a web UI. It orchestrates <strong>Debezium Server</strong> — one container per pipeline — so you get streaming database changes <strong>without running a Kafka Connect cluster</strong>.</p>
+      <p class="sub">A control plane for Change Data Capture you drive from a web UI. It orchestrates <strong>Debezium Server</strong> — one container per pipeline — so each stream has its own runtime, config, state, logs, and health model.</p>
       <div class="cards">
         <div class="card">
           <span class="ico">✅</span>
@@ -52,14 +59,94 @@
         </div>
         <div class="card">
           <span class="ico">📊</span>
-          <h3>Live health</h3>
-          <p>Lifecycle phase, snapshot progress, throughput hints, parsed error reasons, and a live log viewer.</p>
+          <h3>Pipeline cockpit</h3>
+          <p>Lifecycle phase, snapshot progress, lag, queue usage, uptime, parsed errors, and live logs in one place.</p>
         </div>
         <div class="card">
-          <span class="ico">🔐</span>
-          <h3>Secure by default</h3>
-          <p>Credentials are encrypted at rest and never returned by the API. Access is gated behind sign-in.</p>
+          <span class="ico">👀</span>
+          <h3>Kafka preview</h3>
+          <p>Inspect recent records from pipeline-owned topics without committing consumer offsets.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOW -->
+  <section id="flow">
+    <div class="wrap">
+      <h2>From database to trusted stream</h2>
+      <p class="sub">BeziSync turns the usual CDC setup into a guided path with checks at the points where Debezium commonly fails.</p>
+      <div class="flow">
+        <div class="flow-item">
+          <span>1</span>
+          <strong>Add secrets</strong>
+          <p>Store source and broker credentials once. BeziSync encrypts them and reuses them across connections.</p>
+        </div>
+        <div class="flow-item">
+          <span>2</span>
+          <strong>Test connections</strong>
+          <p>Verify Postgres/MySQL CDC settings and Kafka reachability before a pipeline is created.</p>
+        </div>
+        <div class="flow-item">
+          <span>3</span>
+          <strong>Pick tables</strong>
+          <p>Choose schemas, tables, and snapshot behavior in the pipeline wizard.</p>
+        </div>
+        <div class="flow-item">
+          <span>4</span>
+          <strong>Validate & deploy</strong>
+          <p>Preview topics and generated properties, then launch a dedicated Debezium Server container.</p>
+        </div>
+        <div class="flow-item">
+          <span>5</span>
+          <strong>Observe & inspect</strong>
+          <p>Watch phase, metrics, logs, and recent Kafka records from the pipeline cockpit.</p>
+        </div>
+        <div class="flow-item">
+          <span>6</span>
+          <strong>Operate safely</strong>
+          <p>Restart, stop, backfill with signals, or edit config only when the pipeline state allows it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <h2>What makes it useful day to day</h2>
+      <p class="sub">BeziSync is built around the operator moments that decide whether a CDC pipeline feels reliable: setup, first deploy, debugging, proof of data, and controlled change.</p>
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="kicker">Readiness</span>
+          <h3>Source checks that know CDC</h3>
+          <p>Postgres checks cover logical WAL, replication slots, WAL senders, replication privilege, table discovery, and primary-key or replica-identity warnings. MySQL checks cover binary logging, row binlogs, server id, grants, GTID hints, and keyability.</p>
+        </article>
+        <article class="feature">
+          <span class="kicker">Compiler</span>
+          <h3>Generated Debezium properties</h3>
+          <p>The compiler injects connector class, topic prefix, Postgres slot/publication, MySQL server id, serializers, offset storage, schema history, heartbeat, formats, table filters, and transforms.</p>
+        </article>
+        <article class="feature">
+          <span class="kicker">Transforms</span>
+          <h3>Friendly SMT catalog</h3>
+          <p>Add common single-message transforms without memorizing class names: unwrap Debezium envelopes, route topics, mask sensitive fields, or drop fields. Advanced custom SMT classes still work.</p>
+        </article>
+        <article class="feature">
+          <span class="kicker">Preview</span>
+          <h3>See the data that landed</h3>
+          <p>Open the Data Preview tab to read recent Kafka records for a pipeline topic, including operation, table, key, before/after payload, partition, offset, and timestamp.</p>
+        </article>
+        <article class="feature">
+          <span class="kicker">Backfill</span>
+          <h3>Incremental snapshots without redeploy</h3>
+          <p>Use Debezium source-table signals to execute, pause, resume, or stop incremental snapshots while the pipeline keeps streaming.</p>
+        </article>
+        <article class="feature">
+          <span class="kicker">Runtime</span>
+          <h3>Deploy where your streams should run</h3>
+          <p>Each workspace can target a Docker daemon, TLS cert path, network, Debezium image, resource limits, restart policy, and metrics settings from Runtime Config.</p>
+        </article>
       </div>
     </div>
   </section>
@@ -67,10 +154,10 @@
   <!-- WHY -->
   <section id="why">
     <div class="wrap">
-      <h2>Why it exists</h2>
-      <p class="sub">Debezium is powerful but unforgiving. BeziSync turns each common failure mode into something caught early and explained clearly.</p>
+      <h2>Why teams try it</h2>
+      <p class="sub">Debezium is powerful but unforgiving. BeziSync turns each common failure mode into something caught early, explained clearly, and visible in the UI.</p>
       <table>
-        <thead><tr><th>Debezium pain point</th><th>What BeziSync does</th></tr></thead>
+        <thead><tr><th>Manual Debezium setup</th><th>With BeziSync</th></tr></thead>
         <tbody>
           <tr>
             <td>Cryptic failures after deploy</td>
@@ -85,12 +172,20 @@
             <td><strong>Live health</strong> — lifecycle phase, snapshot completion, throughput hints, parsed error reason, and a live log viewer.</td>
           </tr>
           <tr>
-            <td>Plaintext secrets everywhere</td>
-            <td>Credentials are <strong>encrypted at rest</strong> and never returned by the API.</td>
-          </tr>
-          <tr>
             <td>Slow, error-prone first run</td>
             <td>A <strong>guided wizard</strong> (configure → select tables → validate → deploy) so the pipeline is only created once everything lines up.</td>
+          </tr>
+          <tr>
+            <td>Hard to prove records are landing</td>
+            <td><strong>Kafka preview</strong> reads a bounded tail from pipeline topics without committing offsets, so you can inspect create/update/delete events in the UI.</td>
+          </tr>
+          <tr>
+            <td>Risky operational changes</td>
+            <td><strong>State-aware controls</strong> block unsafe edits and deletes while a pipeline is running, deploying, or stopping.</td>
+          </tr>
+          <tr>
+            <td>Plaintext secrets everywhere</td>
+            <td>Credentials are <strong>encrypted at rest</strong>, never returned by the API, and compiled configs reference environment variables instead of raw secret values.</td>
           </tr>
         </tbody>
       </table>
@@ -131,7 +226,7 @@
   <section id="run">
     <div class="wrap">
       <h2>Run it yourself</h2>
-      <p class="sub">BeziSync self-hosts as a small stack of published images from GHCR. You bring your own source database and Kafka — this stack is just the BeziSync app itself.</p>
+      <p class="sub">Start with the compact self-hosted stack, then point BeziSync at the Docker daemon that should run your Debezium containers. Bring your own source database and Kafka, or use the production-shaped Docker-in-Docker example for a fuller local simulation.</p>
       <p>Save this as <code>docker-compose.yml</code>:</p>
       <pre><code><span class="cm"># docker-compose.yml — BeziSync self-host (bring your own source DB + Kafka)</span>
 services:
@@ -200,6 +295,16 @@ docker compose up -d</code></pre>
       <div class="note">
         <strong>One-time setup after first start:</strong> the worker deploys Debezium connectors to a Docker daemon you choose — it isn't wired up by default. Log in, then open <strong>Settings → Runtime Config</strong> and point BeziSync at the daemon that should host your connectors (and its image, network, and TLS). Until that's set, pipelines can be created and validated but not deployed.
       </div>
+
+      <details class="advanced">
+        <summary>Advanced: simulate the production runtime with Docker-in-Docker</summary>
+        <p>For a closer production-style test, run BeziSync with a dedicated Docker daemon instead of your host Docker socket. Download the <a href="examples/bezisync-dind-compose.yml">Docker-in-Docker compose example</a> alongside its <a href="examples/bezisync-source-init.sql">source init SQL</a> and <a href="examples/bezisync-source-load.sh">change generator</a>, then set Runtime Config to:</p>
+        <pre><code>Docker host: tcp://dind:2376
+TLS verify: on
+Cert path: /certs/client
+Docker network: leave blank</code></pre>
+        <p>The example includes a CDC-ready Postgres source, Kafka target, continuous row changes, and a separate mTLS Docker daemon where BeziSync launches Debezium containers.</p>
+      </details>
     </div>
   </section>
 
@@ -207,7 +312,7 @@ docker compose up -d</code></pre>
   <section id="how">
     <div class="wrap">
       <h2>How you use it</h2>
-      <p class="sub">Everything happens in the BeziSync UI. From a clean workspace, a working CDC stream is four moves away.</p>
+      <p class="sub">Everything happens in the BeziSync UI. From a clean workspace, a useful CDC stream is a guided path rather than a properties-file guessing game.</p>
       <ol class="steps">
         <li><strong>Add credentials</strong><span>Store the secrets for your source database and target broker. They're encrypted immediately and never shown again.</span></li>
         <li><strong>Create connections</strong><span>Add a source (Postgres/MySQL) and a target (Kafka), then hit <em>Test</em>. BeziSync confirms connectivity and that the source is CDC-ready.</span></li>
@@ -218,7 +323,8 @@ docker compose up -d</code></pre>
             <strong style="font-weight:600">Validate &amp; deploy</strong> — preflight runs every check, previews the topics and the compiled Debezium config, then deploys. Failing checks block the deploy; warnings can be overridden with <em>Deploy anyway</em>.
           </span>
         </li>
-        <li><strong>Monitor &amp; operate</strong><span>The pipeline page shows lifecycle phase, snapshot progress, throughput, parsed errors, and live logs. Trigger ad-hoc <strong>incremental snapshots</strong> (execute / pause / resume / stop) on a running pipeline — no redeploy needed.</span></li>
+        <li><strong>Monitor &amp; operate</strong><span>The pipeline page shows lifecycle phase, snapshot progress, lag, queue usage, uptime, parsed errors, and live logs. Trigger ad-hoc <strong>incremental snapshots</strong> (execute / pause / resume / stop) on a running pipeline — no redeploy needed.</span></li>
+        <li><strong>Preview &amp; refine</strong><span>Use the Data Preview tab to inspect recent Kafka records, then refine filters, formats, heartbeat, signaling, or SMT transforms when the pipeline is stopped.</span></li>
       </ol>
     </div>
   </section>
@@ -247,7 +353,7 @@ docker compose up -d</code></pre>
   <section id="architecture">
     <div class="wrap">
       <h2>Under the hood</h2>
-      <p class="sub">Two services plus a worker — the parts you interact with and the part that runs your streams.</p>
+      <p class="sub">A small app stack manages metadata and orchestration. Your actual CDC traffic flows through Debezium Server containers into your Kafka cluster.</p>
       <div class="cards">
         <div class="card">
           <h3>Web UI</h3>
@@ -255,8 +361,41 @@ docker compose up -d</code></pre>
         </div>
         <div class="card">
           <h3>API + worker</h3>
-          <p>The API handles connectivity checks, preflight validation, config compilation, and health parsing. A background worker spawns and stops the per-pipeline Debezium Server containers.</p>
+          <p>The API handles connectivity checks, preflight validation, config compilation, Kafka preview, signaling, and health parsing. A background worker spawns, reconciles, and stops the per-pipeline Debezium Server containers.</p>
         </div>
+        <div class="card">
+          <h3>Metadata services</h3>
+          <p>Postgres stores BeziSync metadata, Redis backs the worker queue, and encrypted credentials stay inside the BeziSync control plane.</p>
+        </div>
+        <div class="card">
+          <h3>Your infrastructure</h3>
+          <p>Source databases, Kafka, Docker runtime, networks, and TLS settings stay under your control.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <h2>FAQ</h2>
+      <div class="faq">
+        <details open>
+          <summary>What is the quickest way to see it working?</summary>
+          <p>Run the compose stack, log in, open the seeded <code>orders-to-kafka</code> pipeline, deploy it, then watch health and preview records in Kafka.</p>
+        </details>
+        <details>
+          <summary>Do I need Kafka Connect?</summary>
+          <p>No. BeziSync orchestrates Debezium Server containers directly, with one container per pipeline.</p>
+        </details>
+        <details>
+          <summary>What source and target systems are supported?</summary>
+          <p>BeziSync currently focuses on PostgreSQL and MySQL sources with Kafka as the target.</p>
+        </details>
+        <details>
+          <summary>Does BeziSync store my table data?</summary>
+          <p>No. It stores app metadata, connection definitions, encrypted credentials, and pipeline state. Row changes stream through Debezium to Kafka.</p>
+        </details>
       </div>
       <a class="back" href="index.html">← Back to all products</a>
     </div>

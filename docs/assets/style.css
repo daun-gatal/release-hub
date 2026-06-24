@@ -80,6 +80,14 @@ a:hover { text-decoration: underline; }
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .hero p.lead { font-size: 1.22rem; color: var(--muted); max-width: 640px; margin: 0 0 30px; }
+.hero-proof {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; color: var(--muted);
+  font-size: 0.86rem;
+}
+.hero-proof span {
+  border: 1px solid var(--border); border-radius: 999px; background: var(--panel);
+  padding: 6px 11px;
+}
 
 .btn-row { display: flex; flex-wrap: wrap; gap: 12px; }
 .btn {
@@ -114,6 +122,33 @@ a.card:hover { text-decoration: none; }
 .card .tag {
   display: inline-block; font-family: var(--mono); font-size: 0.7rem; color: var(--good);
   border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; margin-top: 12px;
+}
+
+/* ── Flow ── */
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.flow-item {
+  position: relative; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px;
+}
+.flow-item span {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; margin-bottom: 12px;
+  border-radius: 50%; background: var(--panel-2); border: 1px solid var(--accent);
+  color: var(--accent); font-family: var(--mono); font-size: 0.82rem; font-weight: 700;
+}
+.flow-item strong { display: block; margin-bottom: 6px; }
+.flow-item p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+/* ── Feature grid ── */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.feature {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px;
+}
+.feature h3 { margin: 4px 0 8px; }
+.feature p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+.kicker {
+  display: inline-block; font-family: var(--mono); color: var(--accent);
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em;
 }
 
 /* ── Tables ── */
@@ -158,9 +193,26 @@ pre code { background: none; border: none; padding: 0; font-size: 0.86rem; line-
 }
 .note strong { color: var(--text); }
 
+/* ── FAQ ── */
+.faq { display: grid; gap: 10px; }
+details {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px;
+}
+summary { cursor: pointer; color: var(--text); font-weight: 650; }
+details p { margin: 10px 0 0; color: var(--muted); font-size: 0.94rem; }
+details.advanced { margin-top: 18px; border-left: 3px solid var(--accent); }
+details.advanced pre { margin-bottom: 8px; }
+
 /* ── Footer ── */
 footer { border-top: 1px solid var(--border); padding: 32px 0; color: var(--faint); font-size: 0.88rem; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
 footer a { color: var(--muted); }
 
 .back { font-size: 0.9rem; color: var(--muted); display: inline-block; margin: 28px 0 0; }
+
+@media (max-width: 720px) {
+  .nav .wrap { height: auto; padding-top: 14px; padding-bottom: 14px; align-items: flex-start; }
+  .nav .links { flex-wrap: wrap; gap: 8px 14px; justify-content: flex-end; }
+  .hero { padding-top: 56px; }
+}
