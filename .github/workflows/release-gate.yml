@@ -1,0 +1,50 @@
+name: Release Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version override (e.g. 0.2.0). Leave empty to auto-compute from fragments."
+        required: false
+        default: ""
+
+jobs:
+  gate-prerelease:
+    name: "Gate 1: Prerelease Approval"
+    runs-on: ubuntu-latest
+    environment: prerelease-approval
+    steps:
+      - name: Approved
+        run: echo "Prerelease gate approved."
+
+  gate-release:
+    name: "Gate 2: Release Approval"
+    needs: gate-prerelease
+    runs-on: ubuntu-latest
+    environment: release-approval
+    steps:
+      - name: Approved
+        run: echo "Release gate approved."
+
+  gate-docker:
+    name: "Gate 3: Docker Publish Approval"
+    needs: gate-release
+    runs-on: ubuntu-latest
+    environment: docker-publish
+    steps:
+      - name: Approved
+        run: echo "Docker publish gate approved."
+
+  trigger:
+    name: Trigger BeziSync Release
+    needs: [gate-prerelease, gate-release, gate-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch release workflow
+        run: |
+          gh workflow run auto-release.yml \
+            --repo daun-gatal/bezisync \
+            --ref main \
+            -f version="${{ inputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.TRIGGER_TOKEN }}
